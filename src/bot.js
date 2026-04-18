@@ -22,6 +22,12 @@ if (!BOT_TOKEN) {
 
 const bot = new Telegraf(BOT_TOKEN);
 
+bot.start(async (ctx) => {
+  await ctx.reply(
+    'Welcome to PeakPath Coaching support! Send me a question about pricing, sessions, cancellations, or onboarding and I\'ll answer from our FAQ. If it\'s outside the FAQ, I\'ll loop in a human coach.'
+  );
+});
+
 async function askLLM(question) {
   const payload = {
     model: MODEL,
