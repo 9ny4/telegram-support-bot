@@ -16,18 +16,6 @@ FAQ:
 - Onboarding: Includes a 30-minute intake call and goal assessment.
 If the answer is not in the FAQ, reply with "ESCALATE".`;
 
-if (!BOT_TOKEN) {
-  throw new Error('BOT_TOKEN missing');
-}
-
-const bot = new Telegraf(BOT_TOKEN);
-
-bot.start(async (ctx) => {
-  await ctx.reply(
-    'Welcome to PeakPath Coaching support! Send me a question about pricing, sessions, cancellations, or onboarding and I\'ll answer from our FAQ. If it\'s outside the FAQ, I\'ll loop in a human coach.'
-  );
-});
-
 async function askLLM(question) {
   const payload = {
     model: MODEL,
@@ -53,32 +41,64 @@ async function askLLM(question) {
   return response.data.choices?.[0]?.message?.content?.trim();
 }
 
-bot.on('text', async (ctx) => {
-  const userMessage = ctx.message?.text;
-  if (!userMessage || !userMessage.trim()) {
-    await ctx.reply('Thanks! Please send a text question so I can help.');
-    return;
-  }
-  const reply = await askLLM(userMessage);
+function createBot(token) {
+  const bot = new Telegraf(token);
 
-  if (!reply || reply.toUpperCase().includes('ESCALATE')) {
-    await ctx.reply('Thanks! A human coach will follow up shortly.');
-    if (ADMIN_CHAT_ID) {
-      await ctx.telegram.sendMessage(
-        ADMIN_CHAT_ID,
-        `Escalation from ${ctx.from.username || ctx.from.id}: ${userMessage}`
-      );
+  bot.start(async (ctx) => {
+    await ctx.reply(
+      "Welcome to PeakPath Coaching support! Send me a question about pricing, sessions, cancellations, or onboarding and I'll answer from our FAQ. If it's outside the FAQ, I'll loop in a human coach."
+    );
+  });
+
+  bot.on('text', async (ctx) => {
+    const userMessage = ctx.message?.text;
+    if (!userMessage || !userMessage.trim()) {
+      await ctx.reply('Thanks! Please send a text question so I can help.');
+      return;
     }
-    return;
+
+    let reply;
+    try {
+      reply = await askLLM(userMessage);
+    } catch (err) {
+      console.error('askLLM error:', err.message);
+      await ctx.reply('Sorry, something went wrong on our end. Please try again in a moment.');
+      return;
+    }
+
+    if (!reply || reply.toUpperCase().includes('ESCALATE')) {
+      await ctx.reply('Thanks! A human coach will follow up shortly.');
+      if (ADMIN_CHAT_ID) {
+        try {
+          await ctx.telegram.sendMessage(
+            ADMIN_CHAT_ID,
+            `Escalation from ${ctx.from.username || ctx.from.id}: ${userMessage}`
+          );
+        } catch (err) {
+          console.error('Failed to notify admin:', err.message);
+        }
+      }
+      return;
+    }
+
+    await ctx.reply(reply);
+  });
+
+  return bot;
+}
+
+// Only start the bot when run directly (not when required by tests)
+if (require.main === module) {
+  if (!BOT_TOKEN) {
+    console.error('BOT_TOKEN missing');
+    process.exit(1);
   }
+  const bot = createBot(BOT_TOKEN);
+  bot.launch();
+  console.log('Support bot started');
 
-  await ctx.reply(reply);
-});
+  process.once('SIGINT', () => bot.stop('SIGINT'));
+  process.once('SIGTERM', () => bot.stop('SIGTERM'));
+}
 
-bot.launch();
-console.log('Support bot started');
-
-process.once('SIGINT', () => bot.stop('SIGINT'));
-process.once('SIGTERM', () => bot.stop('SIGTERM'));
-
-module.exports = { askLLM };
+module.exports = { askLLM, createBot };
