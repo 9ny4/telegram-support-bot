@@ -48,7 +48,11 @@ async function askLLM(question) {
 }
 
 bot.on('text', async (ctx) => {
-  const userMessage = ctx.message.text;
+  const userMessage = ctx.message?.text;
+  if (!userMessage || !userMessage.trim()) {
+    await ctx.reply('Thanks! Please send a text question so I can help.');
+    return;
+  }
   const reply = await askLLM(userMessage);
 
   if (!reply || reply.toUpperCase().includes('ESCALATE')) {
