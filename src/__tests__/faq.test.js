@@ -18,3 +18,40 @@ test('askLLM returns content from OpenRouter response', async () => {
 
   axios.post = originalPost;
 });
+
+test('askLLM returns ESCALATE for unknown questions', async () => {
+  axios.post = async () => ({
+    data: {
+      choices: [{ message: { content: 'ESCALATE' } }],
+    },
+  });
+
+  const reply = await askLLM('Can I get a refund after 60 days?');
+  assert.equal(reply, 'ESCALATE');
+
+  axios.post = originalPost;
+});
+
+test('askLLM returns undefined when choices array is empty', async () => {
+  axios.post = async () => ({
+    data: { choices: [] },
+  });
+
+  const reply = await askLLM('What are the hours?');
+  assert.equal(reply, undefined);
+
+  axios.post = originalPost;
+});
+
+test('askLLM throws when axios rejects (network error)', async () => {
+  axios.post = async () => {
+    throw new Error('Network Error');
+  };
+
+  await assert.rejects(
+    () => askLLM('What is the price?'),
+    /Network Error/
+  );
+
+  axios.post = originalPost;
+});
