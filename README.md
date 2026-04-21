@@ -1,6 +1,11 @@
 # telegram-support-bot
 
-A Telegram support bot built with Telegraf. It answers FAQ questions via OpenRouter (GPT-4o-mini) and escalates unknown requests to an admin chat.
+Telegram bot with AI-powered FAQ responses via OpenRouter + admin escalation for complex issues.
+It combines fast automated answers with human handoff, so customers get help quickly when the bot can’t resolve a request.
+
+## Demo
+
+Screenshot coming soon
 
 ## Features
 
