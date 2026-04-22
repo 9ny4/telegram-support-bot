@@ -46,7 +46,7 @@ function createBot(token) {
 
   bot.start(async (ctx) => {
     await ctx.reply(
-      "Welcome to PeakPath Coaching support! Send me a question about pricing, sessions, cancellations, or onboarding and I'll answer from our FAQ. If it's outside the FAQ, I'll loop in a human coach."
+      'Welcome to PeakPath Coaching support! Send me a question about pricing, sessions, cancellations, or onboarding and I\'ll answer from our FAQ. If it\'s outside the FAQ, I\'ll loop in a human coach.'
     );
   });
 
